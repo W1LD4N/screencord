@@ -38,6 +38,16 @@ The script will:
 4. Start recording with native notifications
 5. Save timestamped MP4 files to `~/Documents/`
 
+### Custom Format
+
+By default, the recording is saved as an `mp4` file. You can pass an argument to specify a different format.
+
+For example, to save as a `mov` file:
+
+```sh
+./screencord.sh mov
+```
+
 ## Features
 
 - ✅ **Efficient compression** - Much smaller files than macOS native recording
