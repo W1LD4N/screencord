@@ -5,6 +5,48 @@
 
 VERSION="0.1.0"
 
+show_help() {
+    cat << EOF
+ScreenCord v$VERSION - Efficient macOS Screen Recorder
+
+USAGE:
+    ./screencord.sh [OPTIONS] [FORMAT]
+
+OPTIONS:
+    -h, --help     Show this help message
+    -v, --version  Show version information
+
+ARGUMENTS:
+    FORMAT         Output format (default: mp4)
+
+DESCRIPTION:
+    Interactive screen recorder that produces compressed videos.
+    Creates much smaller files than macOS built-in recording.
+
+WORKFLOW:
+    1. Lists available video devices (cameras, screens)
+    2. Select video device index
+    3. Lists available audio devices (microphones)
+    4. Select audio device index
+    5. Records until Ctrl+C is pressed
+    6. Saves to ~/Documents/ and opens folder
+
+OUTPUT:
+    ~/Documents/screencord_YYYY-MM-DD@HH.MM.SS.FORMAT
+
+EXAMPLES:
+    ./screencord.sh              # Record as MP4
+    ./screencord.sh mov          # Record as MOV
+    ./screencord.sh --help       # Show help
+
+EOF
+}
+
+if [[ "$1" == "--help" || "$1" == "-h" ]]; then
+    show_help
+    exit 0
+fi
+
 if [[ "$1" == "--version" || "$1" == "-v" ]]; then
     echo "ScreenCord v$VERSION"
     exit 0
