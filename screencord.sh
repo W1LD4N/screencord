@@ -1,9 +1,9 @@
 #!/usr/bin/env bash
 #
-# ScreenCord v0.1.0 - Simple macOS Screen Recorder
+# ScreenCord - Simple macOS Screen Recorder
 # https://github.com/quamejnr/screencord
 
-VERSION="0.1.0"
+VERSION="0.1.1"
 
 show_help() {
     cat << EOF
@@ -57,13 +57,12 @@ fileName="$HOME/Documents/screencord_$(date '+%Y-%m-%d@%H.%M.%S').$FORMAT"
 
 devices=$(ffmpeg -f avfoundation -list_devices true -i "" 2>&1)
 
-validate_input() {
+is_valid_input() {
     if [[ "$1" =~ ^[0-9]+$ ]]; then
-        break
+        return 0
     else
-        echo "Invalid input. Please enter a number."
+        return 1
     fi
-
 }
 
 get_video_devices() {
@@ -72,7 +71,11 @@ get_video_devices() {
     while true; do
         printf "\nEnter video device index (eg. 0):\n"
         read video_index
-        validate_input $video_index
+        if is_valid_input $video_index; then
+            break
+        else
+            echo "Invalid input. Please enter a number."
+        fi
     done
 }
 
@@ -82,7 +85,11 @@ get_audio_devices() {
     while true; do
         printf "\nEnter audio device index (eg. 0):\n"
         read audio_index
-        validate_input $audio_index
+        if is_valid_input $audio_index; then
+            break
+        else
+            echo "Invalid input. Please enter a number."
+        fi
     done
 }
 
@@ -97,9 +104,9 @@ record_video() {
 get_video_devices
 get_audio_devices
 
-echo "Recording with video:$video_index, audio:$audio_index"
+echo "\nRecording with video:$video_index, audio:$audio_index"
 echo "Output: $fileName"
-echo "Press Ctrl+C to stop recording"
+echo "Press Ctrl+C to stop recording\n"
 
 title="ScreenCord"
 msg="Recording started..."
