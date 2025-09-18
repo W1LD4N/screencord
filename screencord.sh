@@ -65,6 +65,7 @@ is_valid_input() {
     fi
 }
 
+
 get_video_devices() {
     echo "--- VIDEO DEVICES ---"
     echo "$devices" | sed -n '/AVFoundation video devices:/,/AVFoundation audio devices:/p' | grep "\[[0-9]\+\]"
@@ -72,6 +73,7 @@ get_video_devices() {
         printf "\nEnter video device index (eg. 0):\n"
         read video_index
         if is_valid_input $video_index; then
+            echo video_index
             break
         else
             echo "Invalid input. Please enter a number."
@@ -86,6 +88,7 @@ get_audio_devices() {
         printf "\nEnter audio device index (eg. 0):\n"
         read audio_index
         if is_valid_input $audio_index; then
+            echo audio_index
             break
         else
             echo "Invalid input. Please enter a number."
@@ -93,16 +96,40 @@ get_audio_devices() {
     done
 }
 
+get_best_framerate_quality() {
+    resolutions=("3840x2160" "2560x1440" "1920x1080" "1280x720" "640x480")
+    framerates=(60 30 24)
+
+    best_frame=""
+    best_res=""
+
+    for res in "${resolutions[@]}"; do
+        for fps in "${framerates[@]}"; do
+            if ffmpeg -f avfoundation -framerate "$fps" -video_size "$res" -i "$video_index" -t 0.1 -f null - &>/dev/null; then
+                best_frame="$fps"
+                best_res="$res"
+                return 0
+            fi
+        done
+    done
+    return 1
+}
+
 record_video() {
-    ffmpeg -f avfoundation -i "$1:$2" \
+    get_best_framerate_quality
+    ffmpeg -f avfoundation -framerate $best_frame -video_size "$best_res" \
+      -i "$1:$2" \
       -c:v libx264 -preset medium -crf 23 \
       -c:a aac -b:a 128k \
       -movflags +faststart \
       -pix_fmt yuv420p "$fileName"
+
+    return $?
 }
 
 get_video_devices
 get_audio_devices
+# get_best_framerate_quality
 
 echo "\nRecording with video:$video_index, audio:$audio_index"
 echo "Output: $fileName"
@@ -112,7 +139,10 @@ title="ScreenCord"
 msg="Recording started..."
 osascript -e "display notification \"$msg\" with title \"$title\""
 
-record_video "$video_index" "$audio_index"
+if ! record_video "$video_index" "$audio_index"; then
+    echo "Video Recording failed"
+    exit 0
+fi
 
 if [ -f "$fileName" ]; then
     msg="Video saved at $fileName"
