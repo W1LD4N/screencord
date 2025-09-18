@@ -3,7 +3,7 @@
 # ScreenCord - Simple macOS Screen Recorder
 # https://github.com/quamejnr/screencord
 
-VERSION="0.1.1"
+VERSION="0.2.0"
 FORMAT="mp4"
 
 show_help() {
@@ -15,8 +15,9 @@ USAGE:
 
 OPTIONS:
     -h    Show this help message
-    -v,   Show version information
-    -f,   Output format (default: mp4)
+    -v    Show version information
+    -f    Output format (default: mp4)
+    -c    Enable camera overlay
 
 DESCRIPTION:
     Interactive screen recorder that produces compressed videos.
@@ -35,18 +36,30 @@ OUTPUT:
 
 EXAMPLES:
     ./screencord.sh              # Record as MP4
-    ./screencord.sh -f mov       # Record as MOV
     ./screencord.sh -h           # Show help
+    ./screencord.sh -f mov       # Record as MOV
+    ./screencord.sh -c           # Record with camera overlay
 
 EOF
 }
 
 
-while getopts "hvf:" opt; do
+declare -a input_opts
+declare -a video_opts
+declare -a audio_opts
+declare -a output_opts
+declare -a camera_opts
+declare -a filter_opts
+camera_overlay=false
+camera_index=""
+
+
+while getopts "hvf:c" opt; do
     case $opt in
-        h) show_help ;;
-        v) echo "ScreenCord v$VERSION" ;;
+        h) show_help; exit 0;;
+        v) echo "ScreenCord v$VERSION"; exit 0;;
         f) FORMAT="$OPTARG" ;;
+        c) camera_overlay=true ;;
     esac
 done
 
@@ -92,17 +105,19 @@ get_audio_devices() {
 }
 
 get_camera_devices() {
-    echo "--- CAMERA DEVICES ---"
-    echo "$devices" | sed -n '/AVFoundation video devices:/,/AVFoundation audio devices:/p' | grep "\[[0-9]\+\]"
-    while true; do
-        printf "\nEnter camera device index (eg. 0):\n"
-        read camera_index
-        if is_valid_input "$camera_index"; then
-            break
-        else
-            echo "Invalid input. Please enter a number."
-        fi
-    done
+    if [[ "$camera_overlay" == "true" ]]; then
+        echo "--- CAMERA DEVICES ---"
+        echo "$devices" | sed -n '/AVFoundation video devices:/,/AVFoundation audio devices:/p' | grep "\[[0-9]\+\]"
+        while true; do
+            printf "\nEnter camera device index (eg. 0):\n"
+            read camera_index
+            if is_valid_input "$camera_index"; then
+                break
+            else
+                echo "Invalid input. Please enter a number."
+            fi
+        done
+    fi
 }
 
 get_best_framerate_quality() {
@@ -132,28 +147,40 @@ build_ffmpeg_options() {
         echo "Supported format not found!"
         return 1
     fi
-
     read -r best_frame best_res <<< "$best_framerate_quality"
 
-    input_opts=(-f avfoundation -framerate "$best_frame" -video_size "$best_res" -i "$1:$2")
+    screen_opts=(-f avfoundation -framerate "$best_frame" -video_size "$best_res" -i "$video_device:$audio_device")
     video_opts=(-c:v libx264 -preset medium -crf 23 -pix_fmt yuv420p)
     audio_opts=(-c:a aac -b:a 128k)
     output_opts=(-movflags +faststart "$fileName")
+
+    if [[ "$camera_overlay" == "true" ]]; then
+        if ! best_framerate_quality=$(get_best_framerate_quality "$camera_device"); then
+            echo "Supported format not found!"
+            return 1
+        fi
+        read -r best_cam_frame best_cam_res <<< "$best_framerate_quality"
+        camera_opts=(-f avfoundation -framerate "$best_cam_frame" -video_size "$best_cam_res" -i "$camera_device")
+        filter_opts=(-filter_complex "[0:v]scale=480:270[cam];[1:v][cam]overlay=W-w-10:10")
+    fi
 }
 
 
 record_video() {
-    if ! build_ffmpeg_options "$1" "2"; then
+    if ! build_ffmpeg_options "$1" "$2" "$3" ; then
         return 1
     fi
-
-    ffmpeg "${input_opts[@]}" "${video_opts[@]}" "${audio_opts[@]}" "${output_opts[@]}"
+    ffmpeg "${camera_opts[@]}" "${screen_opts[@]}" "${video_opts[@]}" "${filter_opts[@]}" "${audio_opts[@]}" "${output_opts[@]}"
 }
 
 get_video_devices
 get_audio_devices
+get_camera_devices
 
 echo "\nRecording with video:$video_index, audio:$audio_index"
+if [[ "$camera_overlay" == "true" ]]; then
+    echo "Camera overlay: $camera_index"
+fi
 echo "Output: $fileName"
 echo "Press Ctrl+C to stop recording\n"
 
@@ -161,10 +188,7 @@ title="ScreenCord"
 msg="Recording started..."
 osascript -e "display notification \"$msg\" with title \"$title\""
 
-if ! record_video "$video_index" "$audio_index"; then
-    echo "Video Recording failed"
-    exit 1
-fi
+record_video "$video_index" "$audio_index" "$camera_index"
 
 if [ -f "$fileName" ]; then
     msg="Video saved at $fileName"
