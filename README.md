@@ -28,7 +28,7 @@ curl -o screencord.sh https://raw.githubusercontent.com/quamejnr/screencord/main
 ## Usage
 
 ```bash
-./screencord.sh
+./screencord.sh [OPTIONS]
 ```
 
 The script will:
@@ -38,20 +38,41 @@ The script will:
 4. Start recording with native notifications
 5. Save timestamped MP4 files to `~/Documents/`
 
+### Options
+
+| Option | Description |
+|---|---|
+| `-h` | Show help message |
+| `-v` | Show version information |
+| `-f` | Output format (default: `mp4`) |
+| `-c` | Enable camera overlay |
+
 ### Custom Format
 
-By default, the recording is saved as an `mp4` file. You can pass an argument to specify a different format.
+By default, the recording is saved as an `mp4` file. You can use the `-f` flag to specify a different format.
 
 For example, to save as a `mov` file:
 
 ```sh
-./screencord.sh mov
+./screencord.sh -f mov
 ```
+
+### Camera Overlay
+
+Enable the camera overlay to record your screen and camera simultaneously.
+
+```sh
+./screencord.sh -c
+```
+
+The script will prompt you to select a camera device to use for the overlay.
 
 ## Features
 
 - ✅ **Efficient compression** - Much smaller files than macOS native recording
+- ✅ **Automatic quality detection** - Chooses the best resolution and framerate for your screen
 - ✅ Interactive device selection
+- ✅ Camera overlay
 - ✅ High-quality H.264/AAC output
 - ✅ macOS notifications
 
