@@ -4,6 +4,7 @@
 # https://github.com/quamejnr/screencord
 
 VERSION="0.1.1"
+FORMAT="mp4"
 
 show_help() {
     cat << EOF
@@ -13,11 +14,9 @@ USAGE:
     ./screencord.sh [OPTIONS] [FORMAT]
 
 OPTIONS:
-    -h, --help     Show this help message
-    -v, --version  Show version information
-
-ARGUMENTS:
-    FORMAT         Output format (default: mp4)
+    -h    Show this help message
+    -v,   Show version information
+    -f,   Output format (default: mp4)
 
 DESCRIPTION:
     Interactive screen recorder that produces compressed videos.
@@ -36,23 +35,21 @@ OUTPUT:
 
 EXAMPLES:
     ./screencord.sh              # Record as MP4
-    ./screencord.sh mov          # Record as MOV
-    ./screencord.sh --help       # Show help
+    ./screencord.sh -f mov       # Record as MOV
+    ./screencord.sh -h           # Show help
 
 EOF
 }
 
-if [[ "$1" == "--help" || "$1" == "-h" ]]; then
-    show_help
-    exit 0
-fi
 
-if [[ "$1" == "--version" || "$1" == "-v" ]]; then
-    echo "ScreenCord v$VERSION"
-    exit 0
-fi
+while getopts "hvf:" opt; do
+    case $opt in
+        h) show_help ;;
+        v) echo "ScreenCord v$VERSION" ;;
+        f) FORMAT="$OPTARG" ;;
+    esac
+done
 
-FORMAT="${1:-mp4}"
 fileName="$HOME/Documents/screencord_$(date '+%Y-%m-%d@%H.%M.%S').$FORMAT"
 
 devices=$(ffmpeg -f avfoundation -list_devices true -i "" 2>&1)
@@ -72,8 +69,7 @@ get_video_devices() {
     while true; do
         printf "\nEnter video device index (eg. 0):\n"
         read video_index
-        if is_valid_input $video_index; then
-            echo video_index
+        if is_valid_input "$video_index"; then
             break
         else
             echo "Invalid input. Please enter a number."
@@ -87,8 +83,21 @@ get_audio_devices() {
     while true; do
         printf "\nEnter audio device index (eg. 0):\n"
         read audio_index
-        if is_valid_input $audio_index; then
-            echo audio_index
+        if is_valid_input "$audio_index"; then
+            break
+        else
+            echo "Invalid input. Please enter a number."
+        fi
+    done
+}
+
+get_camera_devices() {
+    echo "--- CAMERA DEVICES ---"
+    echo "$devices" | sed -n '/AVFoundation video devices:/,/AVFoundation audio devices:/p' | grep "\[[0-9]\+\]"
+    while true; do
+        printf "\nEnter camera device index (eg. 0):\n"
+        read camera_index
+        if is_valid_input "$camera_index"; then
             break
         else
             echo "Invalid input. Please enter a number."
@@ -105,9 +114,8 @@ get_best_framerate_quality() {
 
     for res in "${resolutions[@]}"; do
         for fps in "${framerates[@]}"; do
-            if ffmpeg -f avfoundation -framerate "$fps" -video_size "$res" -i "$video_index" -t 0.1 -f null - &>/dev/null; then
-                best_frame="$fps"
-                best_res="$res"
+            if ffmpeg -f avfoundation -framerate "$fps" -video_size "$res" -i "$1" -t 0.1 -f null - &>/dev/null; then
+                echo "$fps $res"
                 return 0
             fi
         done
@@ -115,21 +123,35 @@ get_best_framerate_quality() {
     return 1
 }
 
-record_video() {
-    get_best_framerate_quality
-    ffmpeg -f avfoundation -framerate $best_frame -video_size "$best_res" \
-      -i "$1:$2" \
-      -c:v libx264 -preset medium -crf 23 \
-      -c:a aac -b:a 128k \
-      -movflags +faststart \
-      -pix_fmt yuv420p "$fileName"
+build_ffmpeg_options() {
+    local video_device="$1"
+    local audio_device="$2"
+    local camera_device="$3"
 
-    return $?
+    if ! best_framerate_quality=$(get_best_framerate_quality "$video_device"); then
+        echo "Supported format not found!"
+        return 1
+    fi
+
+    read -r best_frame best_res <<< "$best_framerate_quality"
+
+    input_opts=(-f avfoundation -framerate "$best_frame" -video_size "$best_res" -i "$1:$2")
+    video_opts=(-c:v libx264 -preset medium -crf 23 -pix_fmt yuv420p)
+    audio_opts=(-c:a aac -b:a 128k)
+    output_opts=(-movflags +faststart "$fileName")
+}
+
+
+record_video() {
+    if ! build_ffmpeg_options "$1" "2"; then
+        return 1
+    fi
+
+    ffmpeg "${input_opts[@]}" "${video_opts[@]}" "${audio_opts[@]}" "${output_opts[@]}"
 }
 
 get_video_devices
 get_audio_devices
-# get_best_framerate_quality
 
 echo "\nRecording with video:$video_index, audio:$audio_index"
 echo "Output: $fileName"
@@ -141,7 +163,7 @@ osascript -e "display notification \"$msg\" with title \"$title\""
 
 if ! record_video "$video_index" "$audio_index"; then
     echo "Video Recording failed"
-    exit 0
+    exit 1
 fi
 
 if [ -f "$fileName" ]; then
@@ -155,3 +177,4 @@ else
     msg="Recording failed"
     osascript -e "display notification \"$msg\" with title \"$title\""
 fi
+
